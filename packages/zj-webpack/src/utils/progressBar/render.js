@@ -50,8 +50,8 @@ function calculateTotalSteps(entry) {
  * @param {string} text
  * @param {object} options
  * */
-function renderProgress(text, options) {
-  step += options?.step ?? 1
+function renderProgress(text, options = {}) {
+  step += options.step ?? 1
 
 }
 

@@ -1,4 +1,5 @@
 const fs = require('fs')
+const path = require('path')
 const babel = require('@babel/core')
 const parser = require('@babel/parser')
 const traverse = require('@babel/traverse').default
@@ -92,14 +93,14 @@ class Webpack {
      * visitor配置钩子函数，不同的钩子会返回不同的语句
      * 遍历到对应的语句，就会执行钩子函数，返回语句的信息 (详见AST Exporer)
      * */
-    const deeps = []
+    const dependencies = []
 
     traverse(ast, {
       ImportDeclaration: path => { // todo 遇到import语句,将文件路径push到依赖数组
         const depFilePath = this.addFileSuffix(path.node.source.value)
         path.node.source.value = depFilePath
 
-        deeps.push(depFilePath)
+				dependencies.push(depFilePath)
         if (/\.css$/.test(depFilePath)) {
           path.remove()
         }
@@ -111,7 +112,7 @@ class Webpack {
           const depFilePath = this.addFileSuffix(path.node.arguments[0].value)
           path.node.arguments[0].value = depFilePath
 
-          deeps.push(depFilePath)
+					dependencies.push(depFilePath)
           if (/\.css$/.test(depFilePath)) {
             path.remove()
           }
@@ -131,7 +132,7 @@ class Webpack {
       fileID: this.fileID += 1,
       filePath: absolutePath,
       code: es5Code.code,
-      deeps
+			dependencies
     }
   }
 
@@ -148,8 +149,23 @@ class Webpack {
    * @param {string} entry
    * */
   createManifest(entry) {
-    // 通过入口文件来构建文件资源
+    // 1. 通过入口文件来构建文件资源
     const mainAssets = this.createAssets(entry)
+
+		// 2. 通过队列循环方式构建依赖图
+		const queue = [mainAssets]
+
+		for (const assets of queue) {
+			renderProgress(`构建依赖${assets.filePath}`)
+			const dirname = path.dirname(assets.filePath) // 当前处理文件的绝对路径
+			const deps = assets.dependencies
+			assets.mapping = {}
+
+			// 遍历文件的依赖文件
+			for (const depFilePath of deps) {
+				const depFileAbsolutePath = this.getDepAbsoluteFilePath(depFilePath, dirname)
+			}
+		}
 
     return mainAssets
   }
@@ -173,6 +189,18 @@ class Webpack {
 
     return result
   }
+
+	/**
+	 * @description 获取依赖列表的路径的绝对路径
+	 * @param {string} depFilePath
+	 * @param {string} dirname
+	 * @return {string}
+	 * */
+	getDepAbsoluteFilePath(depFilePath, dirname) {
+		let absolutePath = ''
+
+		console.log(depFilePath, dirname)
+	}
 }
 
 module.exports = Webpack
