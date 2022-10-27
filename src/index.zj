@@ -1,0 +1,6 @@
+// 这是自定义文件
+import { increment } from "./utils/helper"
+
+const count = increment(1, 2)
+
+console.log(count, '这个是多少呢')

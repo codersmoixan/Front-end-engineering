@@ -1,0 +1,25 @@
+{
+  "name": "front-end-engineering",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node ./src/scripts/dev.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codersmoixan/Front-end-engineering.git"
+  },
+  "author": "codersmoixan",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/codersmoixan/Front-end-engineering/issues"
+  },
+  "homepage": "https://github.com/codersmoixan/Front-end-engineering#readme",
+  "dependencies": {
+    "@babel/preset-env": "^7.19.4",
+    "zj-webpack": "file:packages/zj-webpack"
+  },
+  "devDependencies": {}
+}

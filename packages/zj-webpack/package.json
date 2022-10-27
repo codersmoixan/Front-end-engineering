@@ -1,0 +1,20 @@
+{
+  "name": "z-webpack",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "codersmoixan",
+  "license": "MIT",
+  "dependencies": {
+    "@babel/core": "^7.19.6",
+    "@babel/parser": "^7.19.6",
+    "@babel/preset-env": "^7.19.4",
+    "@babel/preset-react": "^7.18.6",
+    "@babel/traverse": "^7.19.6",
+    "memory-fs": "^0.5.0",
+    "single-line-log": "^1.1.2"
+  }
+}
