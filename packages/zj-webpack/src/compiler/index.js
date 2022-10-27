@@ -12,6 +12,7 @@ class Webpack {
     this.manifest = null // 细节图
     this.deepList = new Set()
     this.fileID = -1
+		this.Manifast = []
     this.hooks = {
       beforeCompileSync: new SyncHooks(),
       afterCompileSync: new SyncHooks(),
@@ -163,11 +164,24 @@ class Webpack {
 
 			// 遍历文件的依赖文件
 			for (const depFilePath of deps) {
-				const depFileAbsolutePath = this.getDepAbsoluteFilePath(depFilePath, dirname)
+				const depFileAbsolutePath = this.getDepAbsoluteFilePath(depFilePath, dirname) // 预处理路径，获取依赖文件的路径
+				assets.mapping[depFilePath] = depFileAbsolutePath // 通过相对路径和绝对路径匹配 构建资源依赖图
+
+				if (queue.some(module => module.filePath === depFileAbsolutePath)) {
+					continue
+				}
+
+				const childAssets = this.createAssets(depFileAbsolutePath) // 构建子文件的文件资源
+				if (childAssets) { // 处理好的子文件资源推入到队列中，childAssets在下一个循环继续执行
+					queue.push(childAssets)
+				}
 			}
 		}
 
-    return mainAssets
+		this.fileID = -1
+		this.Manifast = queue
+
+    return queue
   }
 
   /**
@@ -200,7 +214,31 @@ class Webpack {
 		let absolutePath = ''
 
 		console.log(depFilePath, dirname)
+		if (depFilePath[0] === '.') { // 如果以 . 开头，则代表是当前dirname的同级目录下的文件 直接返回当前dirname所拼接的路径
+			// 添加后缀
+			depFilePath = this.addFileSuffix(depFilePath)
+			absolutePath = path.join(dirname, depFilePath)
+		} else {
+			absolutePath = this.findDepEntry(depFilePath)
+		}
+
+		return absolutePath
 	}
+
+	/**
+	 * @description 从node_modules中查找入口
+	 * @param {string} depName 包名
+	 * */
+	findDepEntry(depName) {
+		const rootPath = this.config.rootPath
+		const depDirPath = path.join(rootPath, '/node_modules', depName)
+		const packageJsonPath = path.join(depDirPath, 'package.json')
+		const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'))
+		const entry = path.join(depDirPath, packageJson.main)
+
+		return entry
+	}
+
 }
 
 module.exports = Webpack
