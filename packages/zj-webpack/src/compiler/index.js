@@ -1,9 +1,11 @@
 const fs = require('fs')
+const path = require('path')
 const babel = require('@babel/core')
 const parser = require('@babel/parser')
 const traverse = require('@babel/traverse').default
 const SyncHooks = require('../hooks/syncHooks')
 const { renderProgress } = require("../utils/progressBar/render");
+const changeColor = require("../utils/progressBar/changeColor");
 
 class Webpack {
   constructor(webpackConfig) {
@@ -11,6 +13,7 @@ class Webpack {
     this.manifest = null // 细节图
     this.deepList = new Set()
     this.fileID = -1
+		this.Manifast = []
     this.hooks = {
       beforeCompileSync: new SyncHooks(),
       afterCompileSync: new SyncHooks(),
@@ -64,6 +67,30 @@ class Webpack {
     return path
   }
 
+	/**
+	 * @description 完成构建进度条的显示
+	 * @param {string} tag
+	 * */
+	renderFinished(tag) {
+		switch (tag) {
+			case 'bundle':
+				renderProgress(changeColor('√', 92), { done: true })
+				console.log(changeColor(`构建完成`, 92));
+				break
+			case 'serverBundle':
+				renderProgress(changeColor('√', 92), { done: true })
+				console.log(changeColor(`构建完成，访问 ${changeColor(`http://localhost:${this.config.port}`, 96)} \n\n`, 92))
+				break
+			case 'hotUpdate':
+				console.log(changeColor(`热模块替换完成`));
+				break
+			default:
+				renderProgress(changeColor('√', 92), { done: true })
+				console.log(changeColor('构建完成', 92))
+				break
+		}
+	}
+
   /**
    * @description 构建文件资源
    * @param {string} absolutePath
@@ -92,14 +119,14 @@ class Webpack {
      * visitor配置钩子函数，不同的钩子会返回不同的语句
      * 遍历到对应的语句，就会执行钩子函数，返回语句的信息 (详见AST Exporer)
      * */
-    const deeps = []
+    const dependencies = []
 
     traverse(ast, {
       ImportDeclaration: path => { // todo 遇到import语句,将文件路径push到依赖数组
         const depFilePath = this.addFileSuffix(path.node.source.value)
         path.node.source.value = depFilePath
 
-        deeps.push(depFilePath)
+				dependencies.push(depFilePath)
         if (/\.css$/.test(depFilePath)) {
           path.remove()
         }
@@ -111,7 +138,7 @@ class Webpack {
           const depFilePath = this.addFileSuffix(path.node.arguments[0].value)
           path.node.arguments[0].value = depFilePath
 
-          deeps.push(depFilePath)
+					dependencies.push(depFilePath)
           if (/\.css$/.test(depFilePath)) {
             path.remove()
           }
@@ -131,7 +158,7 @@ class Webpack {
       fileID: this.fileID += 1,
       filePath: absolutePath,
       code: es5Code.code,
-      deeps
+			dependencies
     }
   }
 
@@ -141,6 +168,13 @@ class Webpack {
    * */
   createBundle(tag) {
     const manifest = this.createManifest(this.config.entry)
+		this.manifest = manifest
+
+		const modulesString = this.createModules(manifest) // 生成modules
+		const bundleCode = this.createOutputCode(modulesString) // 生成输出代码
+		this.renderFinished(tag)
+
+		return bundleCode
   }
 
   /**
@@ -148,11 +182,61 @@ class Webpack {
    * @param {string} entry
    * */
   createManifest(entry) {
-    // 通过入口文件来构建文件资源
+    // 1. 通过入口文件来构建文件资源
     const mainAssets = this.createAssets(entry)
 
-    return mainAssets
+		// 2. 通过队列循环方式构建依赖图
+		const queue = [mainAssets]
+
+		for (const assets of queue) {
+			renderProgress(`构建依赖${assets.filePath}`)
+			const dirname = path.dirname(assets.filePath) // 当前处理文件的绝对路径
+			const deps = assets.dependencies
+			assets.mapping = {}
+
+			// 遍历文件的依赖文件
+			for (const depFilePath of deps) {
+				const depFileAbsolutePath = this.getDepAbsoluteFilePath(depFilePath, dirname) // 预处理路径，获取依赖文件的路径
+				assets.mapping[depFilePath] = depFileAbsolutePath // 通过相对路径和绝对路径匹配 构建资源依赖图
+
+				if (queue.some(module => module.filePath === depFileAbsolutePath)) {
+					continue
+				}
+
+				const childAssets = this.createAssets(depFileAbsolutePath) // 构建子文件的文件资源
+				if (childAssets) { // 处理好的子文件资源推入到队列中，childAssets在下一个循环继续执行
+					queue.push(childAssets)
+				}
+			}
+		}
+
+		this.fileID = -1
+		this.Manifast = queue
+
+    return queue
   }
+
+	/**
+	 * @description 通过依赖图来生成模块对象集合
+	 * @param {object} manifest 依赖关系图
+	 * */
+	createModules(manifest) {
+		let modulesString = ''
+
+		manifest.forEach(module => {
+			renderProgress(`打包模块${module.filePath}`)
+
+			const key = JSON.stringify(module.filePath)
+			const mapping = JSON.stringify(module.mapping)
+			const code = `(require, module, exports) => {${module.code}}`
+
+			// 单个模块资源
+			const modulesPart = `${key}: {\n code: ${code},\n mapping: ${mapping}}\n`
+			modulesString += modulesPart
+		})
+
+		return `{${modulesString}}`
+	}
 
   /**
    * @description 使用自定义loader
@@ -173,6 +257,86 @@ class Webpack {
 
     return result
   }
+
+	/**
+	 * @description 获取依赖列表的路径的绝对路径
+	 * @param {string} depFilePath
+	 * @param {string} dirname
+	 * @return {string}
+	 * */
+	getDepAbsoluteFilePath(depFilePath, dirname) {
+		let absolutePath = ''
+
+		console.log(depFilePath, dirname)
+		if (depFilePath[0] === '.') { // 如果以 . 开头，则代表是当前dirname的同级目录下的文件 直接返回当前dirname所拼接的路径
+			// 添加后缀
+			depFilePath = this.addFileSuffix(depFilePath)
+			absolutePath = path.join(dirname, depFilePath)
+		} else {
+			absolutePath = this.findDepEntry(depFilePath)
+		}
+
+		return absolutePath
+	}
+
+	/**
+	 * @description 从node_modules中查找入口
+	 * @param {string} depName 包名
+	 * */
+	findDepEntry(depName) {
+		const rootPath = this.config.rootPath
+		const depDirPath = path.join(rootPath, '/node_modules', depName)
+		const packageJsonPath = path.join(depDirPath, 'package.json')
+		const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'))
+		const entry = path.join(depDirPath, packageJson.main)
+
+		return entry
+	}
+
+	/**
+	 * @description 生出输出到bundle.js代码
+	 * @param {string} modulesString 序列化的models代码
+	 * */
+	createOutputCode(modulesString) {
+		// 保存所有已经被加载的模块
+		const installedChunks = {}
+
+		const result = `
+			(() => {
+				// 传入modules
+				const modules = ${modulesString}
+
+				// module缓存
+				const modulesCache = {}
+
+				// 创建require函数，获取modules的函数代码和mapping对象
+				function require(absolutePath) {
+					const { code, mapping } = modules
+
+					const localRequire = (relativePath) => require(mapping[relativePath])
+
+					const cacheModule = modulesCache[absolutePath]
+					if (typeof cacheModule !== 'undefined') { // 如果缓存中有当前缓存的模块，直接返回此缓存模块
+						return cacheModule.exports
+					}
+
+					// 如果缓存中没有此模块，则创建一个新的缓存
+					const module = modulesCache[absolutePath] = {
+						exports: {}
+					}
+
+					fn.apply(null, [localRequire, module, module.exports])
+
+					return modules.exports
+				}
+
+				// 执行require入口模块
+				require(${this.config.entry})
+			})();
+		`
+
+		return result
+	}
 }
 
 module.exports = Webpack
