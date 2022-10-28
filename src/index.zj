@@ -1,5 +1,6 @@
 // 这是自定义文件
-import { increment, test } from './utils/helper'
+import { increment } from './utils/helper'
+import { test } from './utils/test'
 
 (function() {
 	const count = increment(2, 3)
