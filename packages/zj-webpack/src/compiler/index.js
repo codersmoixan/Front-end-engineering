@@ -4,7 +4,8 @@ const babel = require('@babel/core')
 const parser = require('@babel/parser')
 const traverse = require('@babel/traverse').default
 const SyncHooks = require('../hooks/syncHooks')
-const { renderProgress } = require("../utils/progressBar/render");
+const { renderProgress, calculateTotalSteps} = require("../utils/progressBar/render");
+const { addFileSuffix, compressByUglify } = require("../utils/helper")
 const changeColor = require("../utils/progressBar/changeColor");
 
 class Webpack {
@@ -47,25 +48,18 @@ class Webpack {
     this.hooks.afterDistSync.call()
   }
 
-  /**
-   * @description 添加文件后缀
-   * @param {string} path
-   * @return {string}
-   * */
-  addFileSuffix(path) {
-    if (path[0] !== '.' && path[1] !== ':') {
-      return path
-    }
+	/**
+	 * @description 处理代码的后续配置
+	 * @param {string} codeString
+	 * */
+	useConfig(codeString) {
+		// todo 生产环境的代码进行压缩
+		if (this.config.mode === 'production') {
+			codeString = compressByUglify(codeString)
+		}
 
-    const index = path.lastIndexOf(".");
-    const ext = path.substr(index + 1);
-
-    if (ext.length > 5) {
-      path = path + '.js'
-    }
-
-    return path
-  }
+		return codeString
+	}
 
 	/**
 	 * @description 完成构建进度条的显示
@@ -97,7 +91,7 @@ class Webpack {
    * */
   createAssets(absolutePath) {
     // 调用用户的loader
-    absolutePath = this.addFileSuffix(absolutePath)
+    absolutePath = addFileSuffix(absolutePath)
     const fileContent = this.useCustomLoader(absolutePath)
 
     // 排除非js和zj后缀的文件
@@ -123,7 +117,7 @@ class Webpack {
 
     traverse(ast, {
       ImportDeclaration: path => { // todo 遇到import语句,将文件路径push到依赖数组
-        const depFilePath = this.addFileSuffix(path.node.source.value)
+        const depFilePath = addFileSuffix(path.node.source.value)
         path.node.source.value = depFilePath
 
 				dependencies.push(depFilePath)
@@ -135,7 +129,7 @@ class Webpack {
         const calleeName = path.node.callee?.name
 
         if (calleeName === 'require') { // todo 遇到require语句,将文件路径push到依赖数组
-          const depFilePath = this.addFileSuffix(path.node.arguments[0].value)
+          const depFilePath = addFileSuffix(path.node.arguments[0].value)
           path.node.arguments[0].value = depFilePath
 
 					dependencies.push(depFilePath)
@@ -270,7 +264,7 @@ class Webpack {
 		console.log(depFilePath, dirname)
 		if (depFilePath[0] === '.') { // 如果以 . 开头，则代表是当前dirname的同级目录下的文件 直接返回当前dirname所拼接的路径
 			// 添加后缀
-			depFilePath = this.addFileSuffix(depFilePath)
+			depFilePath = addFileSuffix(depFilePath)
 			absolutePath = path.join(dirname, depFilePath)
 		} else {
 			absolutePath = this.findDepEntry(depFilePath)
@@ -336,6 +330,41 @@ class Webpack {
 		`
 
 		return result
+	}
+
+	/**
+	 * @description 将打包好的代码输出到dist目录
+	 * @param {string} outputCode
+	 * */
+	outputDistDir(outputCode) {
+		// todo 检查是否有dist目录，没有则创建
+		const hasDistDir = fs.existsSync(this.config.output)
+		if (!hasDistDir) {
+			fs.mkdirSync(this.config.output)
+		}
+
+		// todo 写入文件
+		fs.writeFileSync(`${this.config.output}/bundle.js`, outputCode)
+
+		const coloredPath = changeColor(path.basename(this.config.output), 96)
+		console.log(`打包成功，请查看${coloredPath}目录！`)
+	}
+
+	/**
+	 * @description 打包代码
+	 * */
+	bundle() {
+		calculateTotalSteps(this.config.entry) // 计算进度条
+
+		this.callBeforeCompileSync()
+		const bundleCode = this.createBundle('bundle')
+		this.callAfterCompileSync()
+
+		const outputCode = this.useConfig(bundleCode)
+
+		this.callBeforeDistSync()
+		this.outputDistDir(outputCode)
+		this.callAfterDistSync()
 	}
 }
 
