@@ -8,6 +8,7 @@ module.exports = {
 	rootPath: __dirname,
   entry: path.join(__dirname, './src/index.zj'),
   output: path.join(__dirname, '/dist'),
+	port: 5173,
   plugins: [
     new HtmlPlugin(),
     // new CssExtractPlugin()

@@ -5,6 +5,7 @@ const parser = require('@babel/parser')
 const traverse = require('@babel/traverse').default
 const SyncHooks = require('../hooks/syncHooks')
 const { renderProgress } = require("../utils/progressBar/render");
+const changeColor = require("../utils/progressBar/changeColor");
 
 class Webpack {
   constructor(webpackConfig) {
@@ -65,6 +66,30 @@ class Webpack {
 
     return path
   }
+
+	/**
+	 * @description 完成构建进度条的显示
+	 * @param {string} tag
+	 * */
+	renderFinished(tag) {
+		switch (tag) {
+			case 'bundle':
+				renderProgress(changeColor('√', 92), { done: true })
+				console.log(changeColor(`构建完成`, 92));
+				break
+			case 'serverBundle':
+				renderProgress(changeColor('√', 92), { done: true })
+				console.log(changeColor(`构建完成，访问 ${changeColor(`http://localhost:${this.config.port}`, 96)} \n\n`, 92))
+				break
+			case 'hotUpdate':
+				console.log(changeColor(`热模块替换完成`));
+				break
+			default:
+				renderProgress(changeColor('√', 92), { done: true })
+				console.log(changeColor('构建完成', 92))
+				break
+		}
+	}
 
   /**
    * @description 构建文件资源
@@ -143,6 +168,13 @@ class Webpack {
    * */
   createBundle(tag) {
     const manifest = this.createManifest(this.config.entry)
+		this.manifest = manifest
+
+		const modulesString = this.createModules(manifest) // 生成modules
+		const bundleCode = this.createOutputCode(modulesString) // 生成输出代码
+		this.renderFinished(tag)
+
+		return bundleCode
   }
 
   /**
@@ -183,6 +215,28 @@ class Webpack {
 
     return queue
   }
+
+	/**
+	 * @description 通过依赖图来生成模块对象集合
+	 * @param {object} manifest 依赖关系图
+	 * */
+	createModules(manifest) {
+		let modulesString = ''
+
+		manifest.forEach(module => {
+			renderProgress(`打包模块${module.filePath}`)
+
+			const key = JSON.stringify(module.filePath)
+			const mapping = JSON.stringify(module.mapping)
+			const code = `(require, module, exports) => {${module.code}}`
+
+			// 单个模块资源
+			const modulesPart = `${key}: {\n code: ${code},\n mapping: ${mapping}}\n`
+			modulesString += modulesPart
+		})
+
+		return `{${modulesString}}`
+	}
 
   /**
    * @description 使用自定义loader
@@ -239,6 +293,50 @@ class Webpack {
 		return entry
 	}
 
+	/**
+	 * @description 生出输出到bundle.js代码
+	 * @param {string} modulesString 序列化的models代码
+	 * */
+	createOutputCode(modulesString) {
+		// 保存所有已经被加载的模块
+		const installedChunks = {}
+
+		const result = `
+			(() => {
+				// 传入modules
+				const modules = ${modulesString}
+
+				// module缓存
+				const modulesCache = {}
+
+				// 创建require函数，获取modules的函数代码和mapping对象
+				function require(absolutePath) {
+					const { code, mapping } = modules
+
+					const localRequire = (relativePath) => require(mapping[relativePath])
+
+					const cacheModule = modulesCache[absolutePath]
+					if (typeof cacheModule !== 'undefined') { // 如果缓存中有当前缓存的模块，直接返回此缓存模块
+						return cacheModule.exports
+					}
+
+					// 如果缓存中没有此模块，则创建一个新的缓存
+					const module = modulesCache[absolutePath] = {
+						exports: {}
+					}
+
+					fn.apply(null, [localRequire, module, module.exports])
+
+					return modules.exports
+				}
+
+				// 执行require入口模块
+				require(${this.config.entry})
+			})();
+		`
+
+		return result
+	}
 }
 
 module.exports = Webpack
