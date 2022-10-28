@@ -3,6 +3,7 @@ const MemoryFileSystem = require('memory-fs')
 const SparkMD5 = require('spark-md5')
 const Koa = require('koa')
 const staticResource = require('koa-static')
+const { WebSocketServer } = require('ws')
 
 class WebpackDevServer {
   constructor(webpack) {
@@ -13,6 +14,7 @@ class WebpackDevServer {
 			jsHash: '',
 			cssHash: ''
 		}
+		this.wsConnection = null
 		this.bundleFilePath = ''
 		this.app = null // 本地服务
 		this.port = webpack.config.port ?? 8080
@@ -68,9 +70,31 @@ class WebpackDevServer {
 		this.app = app
 	}
 
+	/**
+	 * @description 开启webSocket连接
+	 * */
+	connectWebSocket() {
+		this.webSocket = new WebSocketServer({ port: 3001 })
+		this.webSocket.on('connection', (wsConnection) => {
+			this.wsConnection = wsConnection
+			wsConnection.send(this.hash.jsHash)
+		})
+	}
+
+	/**
+	 * @description 监听文件的变动触发热更新
+	 * */
+	watchFiles() {
+		// 创建文件监视器
+		const srcPath = path.resolve(this.config.entry, '..')
+
+	}
+
   run() {
     this.initBundleCode()
 		this.createServer()
+		this.connectWebSocket()
+		this.watchFiles()
   }
 }
 

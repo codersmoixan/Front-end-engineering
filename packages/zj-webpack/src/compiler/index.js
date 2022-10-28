@@ -231,7 +231,7 @@ class Webpack {
 			const code = `(require, module, exports) => {${module.code}}`
 
 			// 单个模块资源
-			const modulesPart = `${key}: {\n code: ${code},\n mapping: ${mapping}}\n`
+			const modulesPart = `${key}: {\n code: ${code},\n mapping: ${mapping}}, \n`
 			modulesString += modulesPart
 		})
 
@@ -302,7 +302,7 @@ class Webpack {
 		const installedChunks = {}
 
 		const result = `
-			(() => {
+			(function (){
 				// 传入modules
 				const modules = ${modulesString}
 
@@ -311,12 +311,12 @@ class Webpack {
 
 				// 创建require函数，获取modules的函数代码和mapping对象
 				function require(absolutePath) {
-					const { code, mapping } = modules
+					const { code: fn, mapping } = modules[absolutePath]
 
 					const localRequire = (relativePath) => require(mapping[relativePath])
 
 					const cacheModule = modulesCache[absolutePath]
-					if (typeof cacheModule !== 'undefined') { // 如果缓存中有当前缓存的模块，直接返回此缓存模块
+					if (cacheModule !== undefined) { // 如果缓存中有当前缓存的模块，直接返回此缓存模块
 						return cacheModule.exports
 					}
 
@@ -327,11 +327,11 @@ class Webpack {
 
 					fn.apply(null, [localRequire, module, module.exports])
 
-					return modules.exports
+					return module.exports
 				}
 
 				// 执行require入口模块
-				require(${this.config.entry})
+				require(${JSON.stringify(this.config.entry)})
 			})();
 		`
 
