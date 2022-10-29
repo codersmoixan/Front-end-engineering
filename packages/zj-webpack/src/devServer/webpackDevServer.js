@@ -4,20 +4,26 @@ const SparkMD5 = require('spark-md5')
 const Koa = require('koa')
 const staticResource = require('koa-static')
 const { WebSocketServer } = require('ws')
+const { DirectoryWatcher } = require('../../../zj-watchpack/src/index')
 
 class WebpackDevServer {
   constructor(webpack) {
     this.webpack = webpack
     this.config = webpack.config
     this.memoFs = new MemoryFileSystem() // 内存文件系统
-		this.hash = { // 文件hash
-			jsHash: '',
-			cssHash: ''
-		}
+		this.watcher = null // 文件监听器
 		this.wsConnection = null
 		this.bundleFilePath = ''
 		this.app = null // 本地服务
 		this.port = webpack.config.port ?? 8080
+		this.hash = { // 文件hash
+			jsHash: '',
+			cssHash: ''
+		}
+		this.watcherFileType = { // 需要监听文件的后缀
+			js: ['js', 'zj'],
+			css: ['css', 'less']
+		}
   }
 
 	/**
@@ -34,8 +40,23 @@ class WebpackDevServer {
 			this.memoFs.writeFileSync(filePath, bundleCode)
 			this.hash.jsHash = this.generateHash(filePath)
 		}
-
   }
+
+	/**
+	 * @description 更新bundle代码
+	 * @param {string} path
+	 * */
+	updateBundle(path) {
+		const fileSuffix = path.substr(path.lastIndexOf('.') + 1)
+		const hasWatcherFileTypeJs = this.watcherFileType.js.includes(fileSuffix)
+		const hasWatcherFileTypeCss = this.watcherFileType.css.includes(fileSuffix)
+
+		if (hasWatcherFileTypeJs) {
+			const jsCode = this.webpack.createNewBundle(path)
+			this.memoFs.writeFileSync(this.bundleFilePath, jsCode)
+			this.hash.jsHash = this.generateHash(this.bundleFilePath)
+		}
+	}
 
 	/**
 	 * @description 生成文件hash
@@ -87,7 +108,20 @@ class WebpackDevServer {
 	watchFiles() {
 		// 创建文件监视器
 		const srcPath = path.resolve(this.config.entry, '..')
+		this.watcher = new DirectoryWatcher({
+			directoryList: [srcPath],
+		})
 
+		// 检查是否为依赖文件
+		const isDepFile = path => this.webpack.deepList.has(path)
+
+		this.watcher.on('change', path => {
+			if (isDepFile(path)) {
+				this.updateBundle(path)
+			}
+		})
+
+		this.watcher.watch()
 	}
 
   run() {

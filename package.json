@@ -20,7 +20,8 @@
   "homepage": "https://github.com/codersmoixan/Front-end-engineering#readme",
   "dependencies": {
     "@babel/preset-env": "^7.19.4",
-    "zj-webpack": "file:packages/zj-webpack"
+    "zj-webpack": "file:packages/zj-webpack",
+    "zj-watchpack": "file:packages/zj-watchpack"
   },
   "devDependencies": {}
 }
