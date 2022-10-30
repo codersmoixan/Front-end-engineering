@@ -115,9 +115,25 @@ class WebpackDevServer {
 		// 检查是否为依赖文件
 		const isDepFile = path => this.webpack.deepList.has(path)
 
+		// todo 热更新change事件
+		//  文件变更时触发热更新，重新生成bundle代码，保存到内存，发送hash给客户端，客户端判断hash变更，然后拉取新代码
 		this.watcher.on('change', path => {
 			if (isDepFile(path)) {
 				this.updateBundle(path)
+			}
+		})
+
+		// todo 热更新create事件
+		this.watcher.on('create', path => {
+			if (isDepFile(path)) {
+				console.log(`${path}创建新模块，重新打包后生效`)
+			}
+		})
+
+		// todo 热更新delete事件
+		this.watcher.on('delete', path => {
+			if (isDepFile(path)) {
+				console.log(`删除模块${path}, 重新打包`)
 			}
 		})
 

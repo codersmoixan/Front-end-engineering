@@ -17,7 +17,7 @@ class FileWatcher{
 
 			// todo 如果文件被删除，触发remove时间并且删除Watcher
 			if (this.filePath && !stat) {
-				this.directoryWatcher.emit('remove', this.filePath, 'remove')
+				this.directoryWatcher.emit('delete', this.filePath, 'delete')
 				this.directoryWatcher.watchers.delete(this.filePath)
 
 				return null
