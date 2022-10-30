@@ -171,8 +171,43 @@ class Webpack {
 		return bundleCode
   }
 
-  /**
-   * @description 构建文件依赖图
+	/**
+	 * @description 根据变更的文件，需要生成新的依赖图，并生成新的bundle.js文件
+	 * @param {string} path
+	 * */
+	createNewBundle(path) {
+		const updateFilesPath = this.collectUpdateFiles(path)
+		const assetsQueue = updateFilesPath.map(path => this.createManifestPart(path))
+		this.updateManifest(assetsQueue)
+
+		const moduleString = this.createModules(this.manifest)
+		const bundleCode = this.createOutputCode(moduleString)
+		this.renderFinished('hotUpdate')
+
+		return bundleCode
+	}
+
+	/**
+	 * @description 通过变更的文件，找到相关需要重新构建的文件
+	 * @param {string} path
+	 * */
+	collectUpdateFiles(path) {
+		const updatePathList = [path]
+
+		this.manifest.forEach(assets => {
+			const mapping = assets.mapping
+			Object.keys(mapping).forEach(key => {
+				if (mapping[key] === path) {
+					updatePathList.push(assets.filePath)
+				}
+			})
+		})
+
+		return Array.from(new Set(updatePathList))
+	}
+
+	/**
+	 * @description 构建文件依赖图
    * @param {string} entry
    * */
   createManifest(entry) {
@@ -209,6 +244,36 @@ class Webpack {
 
     return queue
   }
+
+	/**
+	 * @description 构建单个manifest模块 用于热更新
+	 * @param {string} p
+	 * */
+	createManifestPart(p) {
+  	// 构建文件资源
+		const assets = this.createAssets(p)
+		assets.mapping = {} // 文件的依赖map
+
+		const dirAbsolutePath = path.dirname(assets.filePath) // 获取文件的绝对路径
+
+		for (const relativePath of assets.dependencies) { // 遍历依赖文件资源
+			assets.mapping[relativePath] = path.join(dirAbsolutePath, relativePath) // 将绝对路径和相对路径拼接得到完成的文件路径，添加到文件依赖map中
+		}
+
+		return assets
+	}
+
+	/**
+	 * @description 更新Manifest
+	 * */
+	updateManifest(assetsQueue) {
+		assetsQueue.forEach(assets => {
+			const target = this.manifest.find(part => part.filePath === assets.filePath)
+			target.code = assets.code
+			target.dependencies = assets.dependencies
+			target.mapping = assets.mapping
+		})
+	}
 
 	/**
 	 * @description 通过依赖图来生成模块对象集合
@@ -336,7 +401,7 @@ class Webpack {
 	 * @description 将打包好的代码输出到dist目录
 	 * @param {string} outputCode
 	 * */
-	outputDistDir(outputCode) {
+	outputToDistDir(outputCode) {
 		// todo 检查是否有dist目录，没有则创建
 		const hasDistDir = fs.existsSync(this.config.output)
 		if (!hasDistDir) {
@@ -363,7 +428,7 @@ class Webpack {
 		const outputCode = this.useConfig(bundleCode)
 
 		this.callBeforeDistSync()
-		this.outputDistDir(outputCode)
+		this.outputToDistDir(outputCode)
 		this.callAfterDistSync()
 	}
 }
