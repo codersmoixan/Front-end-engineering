@@ -3,6 +3,10 @@ const path = require('path')
 const EventEmitter = require('events')
 const FileWatcher = require('./FileWatcher')
 
+function getDifferenceFiles(files, newFiles) {
+	return files.concat(newFiles).filter((file, index, concatFiles) => concatFiles.indexOf(file) === concatFiles.lastIndexOf(file))
+}
+
 class DirectoryWatcher extends EventEmitter{
 	constructor(options = {}) {
 		const { directoryList, poll = 1000 } = options
@@ -47,9 +51,10 @@ class DirectoryWatcher extends EventEmitter{
 	 * */
 	collectNeedFilesWatcher() {
 		const fileList = this.collectFiles()
+		const needWatcherFiles = getDifferenceFiles(this.fileList, fileList)
 		this.fileList = fileList
 
-		return fileList
+		return needWatcherFiles
 	}
 
 	/**
@@ -66,7 +71,9 @@ class DirectoryWatcher extends EventEmitter{
 	 * @description 遍历文件watchers
 	 * */
 	ergodicWatchers() {
-
+		this.watchers.forEach(watcher => {
+			watcher.emitEvent()
+		})
 	}
 
 	/**
@@ -83,6 +90,7 @@ class DirectoryWatcher extends EventEmitter{
 	 * */
 	watch() {
 		console.log('[ ================= 正在监视文件变动 ================= ]')
+		console.log(this.directoryList)
 		this.scanIntervaler = setInterval(() => {
 			this.scanFiles()
 		}, this.poll)

@@ -1,1 +1,1 @@
-export const test = () => '测试'
+export const test = () => '这个只是个测试.'

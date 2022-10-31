@@ -3,8 +3,8 @@ const MemoryFileSystem = require('memory-fs')
 const SparkMD5 = require('spark-md5')
 const Koa = require('koa')
 const staticResource = require('koa-static')
-const { WebSocketServer } = require('ws')
-const { DirectoryWatcher } = require('../../../zj-watchpack/src/index')
+const { DirectoryWatcher } = require('zj-watchpack')
+const webSocket = require('./webSocket/index')
 
 class WebpackDevServer {
   constructor(webpack) {
@@ -12,7 +12,7 @@ class WebpackDevServer {
     this.config = webpack.config
     this.memoFs = new MemoryFileSystem() // 内存文件系统
 		this.watcher = null // 文件监听器
-		this.wsConnection = null
+		this.webSocket = webSocket
 		this.bundleFilePath = ''
 		this.app = null // 本地服务
 		this.port = webpack.config.port ?? 8080
@@ -92,14 +92,10 @@ class WebpackDevServer {
 	}
 
 	/**
-	 * @description 开启webSocket连接
+	 * @description 发送文件hash给客户端
 	 * */
-	connectWebSocket() {
-		this.webSocket = new WebSocketServer({ port: 3001 })
-		this.webSocket.on('connection', (wsConnection) => {
-			this.wsConnection = wsConnection
-			wsConnection.send(this.hash.jsHash)
-		})
+	sendHash() {
+		this.webSocket.send(this.hash.jsHash)
 	}
 
 	/**
@@ -119,7 +115,9 @@ class WebpackDevServer {
 		//  文件变更时触发热更新，重新生成bundle代码，保存到内存，发送hash给客户端，客户端判断hash变更，然后拉取新代码
 		this.watcher.on('change', path => {
 			if (isDepFile(path)) {
+				console.log(`${path}文件改变，更新模块`)
 				this.updateBundle(path)
+				this.sendFileHash()
 			}
 		})
 
@@ -140,10 +138,22 @@ class WebpackDevServer {
 		this.watcher.watch()
 	}
 
+	/**
+	 * @description 将文件hash发送给客户端
+	 * */
+	sendFileHash() {
+		const hash = this.hash.jsHash
+
+		if (this.webSocket) {
+			this.webSocket.send(hash)
+			console.log(`本次更新的hash：${hash}`)
+		}
+	}
+
   run() {
     this.initBundleCode()
 		this.createServer()
-		this.connectWebSocket()
+		this.sendHash()
 		this.watchFiles()
   }
 }
