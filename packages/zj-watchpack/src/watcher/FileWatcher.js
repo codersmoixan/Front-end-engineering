@@ -1,14 +1,17 @@
 const fs = require('fs')
+const EventEmitter = require('events')
 
-class FileWatcher{
+class FileWatcher extends EventEmitter{
 	constructor(directoryWatcher, filePath) {
+		super()
+
 		this.directoryWatcher = directoryWatcher
 		this.filePath = filePath
 		this.ctimeMs = 1
 	}
 
-	emit() {
-		fs.statSync(this.filePath, (err, stat) => {
+	emitEvent() {
+		fs.lstat(this.filePath, (err, stat) => {
 			if (!this.ctimeMs && !stat) {
 				return console.error(`[ ====== 文件${this.filePath}不存在 ====== ]`)
 			}
@@ -26,15 +29,11 @@ class FileWatcher{
 			// todo 如果添加文件，触发create事件
 			if (this.ctimeMs === 1 && this.directoryWatcher.scanCount > 1) {
 				this.directoryWatcher.emit('create', this.filePath, 'create')
-
-				return null
 			}
 
 			// todo 如果是替换文件，触发change事件
 			if (this.ctimeMs !== 1 && ctimeMs !== this.ctimeMs) {
 				this.directoryWatcher.emit('change', this.filePath, 'change')
-
-				return null
 			}
 
 			this.ctimeMs = ctimeMs
