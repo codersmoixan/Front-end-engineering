@@ -2,7 +2,7 @@ import ReactRoot from "./ReactRoot";
 import {
 	getPublicRootInstance
 } from "../../react-reconciler/ReactFiberReconciler";
-import { createContainer } from "../fiber/ReactFiberReconciler";
+import { createContainer } from "../../react-reconciler/ReactFiberReconciler";
 import { ReactRootTags } from "../../shared/ReactRootTags";
 import type { Root, DOMContainer } from "../interface"
 import {

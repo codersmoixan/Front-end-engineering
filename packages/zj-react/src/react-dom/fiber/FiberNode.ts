@@ -1,31 +1,41 @@
 import { ReactSideEffectTags } from "../../shared/ReactSideEffectTags";
 import { RootTag } from "../../shared/ReactRootTags";
+import { Lane, ReactFiberLane } from "../../shared/ReactFiberLane";
 
 export const NoWork = 0;
 
 class FiberRootNode {
 	tag: RootTag;
-	elementType: null;
-	type: null;
-	stateNode: null;
-	return: null;
-	child: null;
-	sibling: null;
+	elementType: any;
+	type: any;
+	stateNode: any;
+	return: any;
+	child: any;
+	sibling: any;
 	index: number;
-	ref: null;
-	memoizedProps: null;
-	updateQueue: null;
-	memoizedState: null;
-	contextDependencies: null;
+	ref: any;
+	memoizedProps: any;
+	updateQueue: any;
+	memoizedState: any;
+	contextDependencies: any;
 	effectTag: number;
-	nextEffect: null;
-	firstEffect: null;
-	lastEffect: null;
+	nextEffect: any;
+	firstEffect: any;
+	lastEffect: any;
 	expirationTime: number;
 	childExpirationTime: number;
-	stateQueueTimer: null;
+	stateQueueTimer: any;
 	containerInfo: any;
 	identifierPrefix: any;
+	pendingChildren: any;
+	current: any;
+	pingCache: any;
+	finishedWork: any;
+	timeoutHandle: any;
+	context: any;
+	pendingContext: any;
+	callbackNode: any;
+	callbackPriority: Lane;
 
 	constructor(
 		containerInfo,
@@ -37,6 +47,16 @@ class FiberRootNode {
 		// Instance
 		this.tag = tag
 		this.containerInfo = containerInfo
+		this.pendingChildren =null
+		this.current = null
+		this.pingCache = null
+		this.finishedWork = null
+		this.timeoutHandle = null
+		this.context = null
+		this.pendingContext = null
+		this.callbackNode = null
+		this.callbackPriority = ReactFiberLane.NoLane
+
 		this.elementType = null
 		this.type = null
 		this.stateNode = null // 对应的函数组件或者dom节点

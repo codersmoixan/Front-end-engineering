@@ -1,4 +1,4 @@
-import { createContainer } from "../fiber/ReactFiberReconciler";
+import { createContainer } from "../../react-reconciler/ReactFiberReconciler";
 import type { DOMContainer } from "../interface"
 
 class ReactRoot {
