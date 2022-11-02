@@ -21,7 +21,8 @@
   "dependencies": {
     "@babel/preset-env": "^7.19.4",
     "zj-webpack": "file:packages/zj-webpack",
-    "zj-watchpack": "file:packages/zj-watchpack"
+    "zj-watchpack": "file:packages/zj-watchpack",
+    "zj-react": "file:packages/zj-react"
   },
   "devDependencies": {}
 }
