@@ -38,7 +38,13 @@ enum ReactWorkTags {
 	SimpleMemoComponent,
 	LazyComponent,
 	IncompleteClassComponent,
-	DehydratedSuspenseComponent
+	DehydratedFragment,
+	SuspenseListComponent,
+	ScopeComponent = 21,
+	OffscreenComponent,
+	LegacyHiddenComponent,
+	CacheComponent,
+	TracingMarkerComponent
 }
 
 export {

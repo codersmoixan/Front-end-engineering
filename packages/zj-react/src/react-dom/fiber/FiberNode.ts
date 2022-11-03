@@ -1,31 +1,32 @@
-import { ReactSideEffectTags } from "../../shared/ReactSideEffectTags";
-import { RootTag } from "../../shared/ReactRootTags";
-
-export const NoWork = 0;
+import { RootTag } from "../../react-reconciler/ReactRootTags";
+import { Lane, Lanes, ReactFiberLane } from "../../react-reconciler/ReactFiberLane";
 
 class FiberRootNode {
 	tag: RootTag;
-	elementType: null;
-	type: null;
-	stateNode: null;
-	return: null;
-	child: null;
-	sibling: null;
+	type: any;
+	stateNode: any;
+	return: any;
+	child: any;
 	index: number;
-	ref: null;
-	memoizedProps: null;
-	updateQueue: null;
-	memoizedState: null;
-	contextDependencies: null;
-	effectTag: number;
-	nextEffect: null;
-	firstEffect: null;
-	lastEffect: null;
-	expirationTime: number;
-	childExpirationTime: number;
-	stateQueueTimer: null;
 	containerInfo: any;
 	identifierPrefix: any;
+	pendingChildren: any;
+	current: any;
+	pingCache: any;
+	finishedWork: any;
+	timeoutHandle: any;
+	context: any;
+	pendingContext: any;
+	callbackNode: any;
+	callbackPriority: Lane;
+	onRecoverableError: any;
+	pendingLanes: Lanes;
+	suspendedLanes: Lanes;
+	pingedLanes: Lanes;
+	expiredLanes: Lanes;
+	mutableReadLanes: Lanes;
+	finishedLanes: Lanes;
+	entangledLanes: Lanes;
 
 	constructor(
 		containerInfo,
@@ -37,33 +38,27 @@ class FiberRootNode {
 		// Instance
 		this.tag = tag
 		this.containerInfo = containerInfo
-		this.elementType = null
-		this.type = null
-		this.stateNode = null // 对应的函数组件或者dom节点
-		this.stateQueueTimer = null // 用于state的合并更新(setTimeout)
+		this.pendingChildren =null
+		this.current = null
+		this.pingCache = null
+		this.finishedWork = null
+		this.timeoutHandle = null
+		this.context = null
+		this.pendingContext = null
+		this.callbackNode = null
+		this.callbackPriority = ReactFiberLane.NoLane
 
-		this.return = null
-		this.child = null
-		this.sibling = null
-		this.index = 0
+		this.pendingLanes = ReactFiberLane.NoLanes
+		this.suspendedLanes = ReactFiberLane.NoLanes;
+		this.pingedLanes = ReactFiberLane.NoLanes;
+		this.expiredLanes = ReactFiberLane.NoLanes;
+		this.mutableReadLanes = ReactFiberLane.NoLanes;
+		this.finishedLanes = ReactFiberLane.NoLanes;
 
-		this.ref = null
-
-		this.memoizedProps = null
-		this.updateQueue = null // Effect的更新链表
-		this.memoizedState = null
-		this.contextDependencies = null
-
-		this.effectTag = ReactSideEffectTags.NoEffect
-		this.nextEffect = null
-
-		this.firstEffect = null
-		this.lastEffect = null
-
-		this.expirationTime = NoWork
-		this.childExpirationTime = NoWork;
+		this.entangledLanes = ReactFiberLane.NoLanes;
 
 		this.identifierPrefix = identifierPrefix;
+		this.onRecoverableError = onRecoverableError;
 	}
 }
 

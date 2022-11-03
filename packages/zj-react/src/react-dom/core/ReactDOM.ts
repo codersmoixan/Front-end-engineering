@@ -1,13 +1,14 @@
-import ReactRoot from "./ReactRoot";
 import {
 	getPublicRootInstance
 } from "../../react-reconciler/ReactFiberReconciler";
-import { createContainer } from "../fiber/ReactFiberReconciler";
-import { ReactRootTags } from "../../shared/ReactRootTags";
-import type { Root, DOMContainer } from "../interface"
+import { createContainer } from "../../react-reconciler/ReactFiberReconciler";
+import { ReactRootTags } from "../../react-reconciler/ReactRootTags";
 import {
 	markContainerAsRoot
 } from "../../react-reconciler/ReactDOMComponentTree";
+import { updateContainer } from "../../react-reconciler/ReactFiberReconciler";
+import type { FiberRoot } from "../../react-reconciler/ReactInternalTypes";
+import type { DOMContainer } from "../interface"
 
 function legacyCreateRootFromDOMContainer(
 	container: DOMContainer,
@@ -15,7 +16,7 @@ function legacyCreateRootFromDOMContainer(
 	parentComponent: any,
 	isHydrationContainer: boolean,
 	callback?: Function,
-): Root {
+): FiberRoot {
 	if (isHydrationContainer) {} else {
 		// todo 首先清除所有现有的内容。
 		let rootSibling;
@@ -39,9 +40,8 @@ function legacyCreateRootFromDOMContainer(
 		container._reactRootContainer = root
 		markContainerAsRoot(root.current, container)
 
+		return root
 	}
-
-	return (new ReactRoot(container, isConcurrent) as any as Root)
 }
 
 /**
@@ -57,6 +57,8 @@ function legacyRenderSubtreeIntoContainer(
 	const maybeRoot = container._reactRootContainer
 	let root;
 	if (!maybeRoot) {
+		// todo 初次调用，root还未初始化，会进入此分支
+		//  创建ReactDOMRoot对象，初始化react应用场景
 		root = legacyCreateRootFromDOMContainer(
 			container,
 			children,
@@ -65,7 +67,12 @@ function legacyRenderSubtreeIntoContainer(
 			callback
 		)
 	} else {
+		// todo root已经初始化，二次调用render会进入
+		//  1. 获取fiberRoot对象
 		root = maybeRoot
+
+		// todo 2. 调用更新
+		updateContainer(children, root, parentComponent, callback)
 	}
 
 	return getPublicRootInstance(root)
