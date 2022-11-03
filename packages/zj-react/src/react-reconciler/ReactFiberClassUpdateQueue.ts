@@ -1,5 +1,5 @@
 import type { Fiber, FiberRoot } from "./ReactInternalTypes";
-import type { Lane, Lanes } from "../shared/ReactFiberLane";
+import type { Lane, Lanes } from "./ReactFiberLane";
 import {isUnsafeClassRenderPhaseUpdate} from "./ReactFiberWorkLoop";
 import {
 	enqueueConcurrentClassUpdate,

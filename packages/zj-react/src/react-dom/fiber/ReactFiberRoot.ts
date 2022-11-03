@@ -1,4 +1,4 @@
-import { RootTag } from "../../shared/ReactRootTags";
+import { RootTag } from "../../react-reconciler/ReactRootTags";
 import { FiberRootNode } from "./FiberNode";
 import type { FiberRoot } from "../../react-reconciler/ReactInternalTypes";
 import { createHostRootFiber } from "./ReactFiber";

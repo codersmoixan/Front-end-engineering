@@ -1,11 +1,11 @@
-import { ReactWorkTags } from "../shared/ReactWorkTags";
+import { ReactWorkTags } from "./ReactWorkTags";
 import {
 	Lanes,
 	markHiddenUpdate,
 	mergeLanes,
 	ReactFiberLane
-} from "../shared/ReactFiberLane";
-import type { Lane } from "../shared/ReactFiberLane";
+} from "./ReactFiberLane";
+import type { Lane } from "./ReactFiberLane";
 import type { Fiber, FiberRoot } from "./ReactInternalTypes";
 import type { OffscreenInstance } from "./ReactFiberOffscreenComponent";
 import type { SharedQueue as ClassQueue, Update as ClassUpdate } from "./ReactFiberClassUpdateQueue";

@@ -1,10 +1,10 @@
-import { RootTag, ReactRootTags } from "../../shared/ReactRootTags";
-import { ReactWorkTags, WorkTag } from "../../shared/ReactWorkTags";
-import { Lanes, ReactFiberLane } from "../../shared/ReactFiberLane";
-import { Flags, ReactFiberFlags } from "../../shared/ReactFiberFlags";
-import type { TypeOfMode } from "../../shared/ReactTypeOfMode";
+import { RootTag, ReactRootTags } from "../../react-reconciler/ReactRootTags";
+import { ReactWorkTags, WorkTag } from "../../react-reconciler/ReactWorkTags";
+import { Lanes, ReactFiberLane } from "../../react-reconciler/ReactFiberLane";
+import { Flags, ReactFiberFlags } from "../../react-reconciler/ReactFiberFlags";
+import type { TypeOfMode } from "../../react-reconciler/ReactTypeOfMode";
 import type { Dependencies, Fiber } from "../../react-reconciler/ReactInternalTypes";
-import {ReactTypeOfMode} from "../../shared/ReactTypeOfMode";
+import {ReactTypeOfMode} from "../../react-reconciler/ReactTypeOfMode";
 
 class FiberNode {
 	tag: WorkTag;

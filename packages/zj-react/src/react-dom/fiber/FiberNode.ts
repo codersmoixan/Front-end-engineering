@@ -1,5 +1,5 @@
-import { RootTag } from "../../shared/ReactRootTags";
-import { Lane, Lanes, ReactFiberLane } from "../../shared/ReactFiberLane";
+import { RootTag } from "../../react-reconciler/ReactRootTags";
+import { Lane, Lanes, ReactFiberLane } from "../../react-reconciler/ReactFiberLane";
 
 class FiberRootNode {
 	tag: RootTag;

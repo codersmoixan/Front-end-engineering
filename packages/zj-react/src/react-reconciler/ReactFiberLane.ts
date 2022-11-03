@@ -1,8 +1,8 @@
-import { FiberRoot } from "../react-reconciler/ReactInternalTypes";
+import { FiberRoot } from "./ReactInternalTypes";
 import {
 	ConcurrentUpdate
-} from "../react-reconciler/ReactFiberConcurrentUpdates";
-import { clz32 } from "../react-reconciler/clz32";
+} from "./ReactFiberConcurrentUpdates";
+import { clz32 } from "./clz32";
 
 type LaneMap<T> = Array<T>
 type Lanes = number;
@@ -20,7 +20,9 @@ enum ReactFiberLane {
 	InputContinuousLane = 0b0000000000000000000000000000100,
 
 	DefaultHydrationLane = 0b0000000000000000000000000001000,
-	DefaultLane = 0b0000000000000000000000000010000
+	DefaultLane = 0b0000000000000000000000000010000,
+
+	IdleLane = 0b0100000000000000000000000000000
 }
 
 function getHighestPriorityLane(lanes: Lanes): Lane {
@@ -69,4 +71,22 @@ export function markHiddenUpdate(
 	}
 
 	update.lane = lane
+}
+
+export function markRootUpdated(
+	root: FiberRoot,
+	updateLane: Lane,
+	eventTime: number
+) {
+	root.pendingLanes |= updateLane
+
+	if (updateLane !== ReactFiberLane.IdleLane) {
+		root.suspendedLanes = ReactFiberLane.NoLanes
+		root.pendingLanes = ReactFiberLane.NoLanes
+	}
+
+	const eventTimes = root.eventTimes
+	const index = laneToIndex(updateLane)
+
+	eventTimes[index] = eventTime
 }

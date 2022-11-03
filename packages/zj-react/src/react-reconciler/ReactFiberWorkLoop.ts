@@ -4,9 +4,9 @@ import {
 	Lane,
 	ReactFiberLane,
 	NoTimestamp,
-	pickArbitraryLane
-} from "../shared/ReactFiberLane";
-import { ReactTypeOfMode } from "../shared/ReactTypeOfMode";
+	pickArbitraryLane, markRootUpdated, mergeLanes
+} from "./ReactFiberLane";
+import { ReactTypeOfMode } from "./ReactTypeOfMode";
 import { deferRenderPhaseUpdateToNextBatch } from "../shared/ReactFeatureFlags";
 import type { Fiber, FiberRoot } from "./ReactInternalTypes";
 
@@ -101,4 +101,24 @@ export function isUnsafeClassRenderPhaseUpdate(fiber: Fiber) {
 			(fiber.mode & ReactTypeOfMode.ConcurrentMode) === ReactTypeOfMode.NoMode) &&
 		(executionContext & WorkContext.RenderContext) !== WorkContext.NoContext
 	);
+}
+
+export function scheduleUpdateOnFiber(
+	root: FiberRoot,
+	fiber: Fiber,
+	lane: Lane,
+	eventTime: number
+) {
+	//todo 标记根下有待处理的更新
+	markRootUpdated(root, lane, eventTime)
+
+	if ((executionContext & WorkContext.RenderContext) !== ReactFiberLane.NoLanes && root === workInProgressRoot) {
+		// 跟踪在渲染阶段更新的车道
+		workInProgressRootRenderPhaseUpdatedLanes = mergeLanes(
+			workInProgressRootRenderPhaseUpdatedLanes,
+			lane
+		)
+	} else {
+
+	}
 }

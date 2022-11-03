@@ -1,9 +1,9 @@
-import type { WorkTag } from "../shared/ReactWorkTags";
-import type {Lane, LaneMap, Lanes} from "../shared/ReactFiberLane";
+import type { WorkTag } from "./ReactWorkTags";
+import type {Lane, LaneMap, Lanes} from "./ReactFiberLane";
 import type { ReactContext, Wakeable, MutableSourceVersion, MutableSource } from "../shared/ReactTypes";
-import type { TypeOfMode } from "../shared/ReactTypeOfMode";
-import type { Flags } from "../shared/ReactFiberFlags";
-import type { RootTag } from "../shared/ReactRootTags";
+import type { TypeOfMode } from "./ReactTypeOfMode";
+import type { Flags } from "./ReactFiberFlags";
+import type { RootTag } from "./ReactRootTags";
 import type { ConcurrentUpdate } from "./ReactFiberConcurrentUpdates";
 
 export type ContextDependency<T> = {
