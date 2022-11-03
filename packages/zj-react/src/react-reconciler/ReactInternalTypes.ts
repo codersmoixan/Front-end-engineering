@@ -4,7 +4,7 @@ import type { ReactContext, Wakeable, MutableSourceVersion, MutableSource } from
 import type { TypeOfMode } from "../shared/ReactTypeOfMode";
 import type { Flags } from "../shared/ReactFiberFlags";
 import type { RootTag } from "../shared/ReactRootTags";
-import {ConcurrentUpdate} from "./ReactFiberConcurrentUpdates";
+import type { ConcurrentUpdate } from "./ReactFiberConcurrentUpdates";
 
 export type ContextDependency<T> = {
 	context: ReactContext<T>,

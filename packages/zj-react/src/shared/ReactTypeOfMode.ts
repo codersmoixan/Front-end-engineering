@@ -1,10 +1,13 @@
 type TypeOfMode = number
 
 enum ReactTypeOfMode {
-	NoContext = 0b000,
-	ConcurrentMode= 0b001,
-	StrictMode = 0b010,
-	ProfileMode = 0b100
+	NoMode = 0b000000,
+	ConcurrentMode = 0b000001,
+	ProfileMode= 0b000010,
+	DebugTracingMode = 0b000100,
+	StrictLegacyMode = 0b001000,
+	StrictEffectsMode = 0b010000,
+	ConcurrentUpdatesByDefaultMode = 0b100000
 }
 
 export {

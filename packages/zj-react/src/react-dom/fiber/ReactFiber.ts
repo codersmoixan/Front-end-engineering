@@ -4,6 +4,7 @@ import { Lanes, ReactFiberLane } from "../../shared/ReactFiberLane";
 import { Flags, ReactFiberFlags } from "../../shared/ReactFiberFlags";
 import type { TypeOfMode } from "../../shared/ReactTypeOfMode";
 import type { Dependencies, Fiber } from "../../react-reconciler/ReactInternalTypes";
+import {ReactTypeOfMode} from "../../shared/ReactTypeOfMode";
 
 class FiberNode {
 	tag: WorkTag;
@@ -88,7 +89,10 @@ export function createHostRootFiber(
 
 	if (tag === ReactRootTags.ConcurrentRoot) {
 		mode = ReactRootTags.ConcurrentRoot
+	} else {
+		mode = ReactTypeOfMode.NoMode
 	}
 
+	// todo 注意这里设置的mode属性是有RootTag决定的
 	return createFiber(ReactWorkTags.HostRoot, null, null, mode)
 }

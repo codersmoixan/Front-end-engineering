@@ -1,30 +1,13 @@
-import { ReactSideEffectTags } from "../../shared/ReactSideEffectTags";
 import { RootTag } from "../../shared/ReactRootTags";
-import { Lane, ReactFiberLane } from "../../shared/ReactFiberLane";
-
-export const NoWork = 0;
+import { Lane, Lanes, ReactFiberLane } from "../../shared/ReactFiberLane";
 
 class FiberRootNode {
 	tag: RootTag;
-	elementType: any;
 	type: any;
 	stateNode: any;
 	return: any;
 	child: any;
-	sibling: any;
 	index: number;
-	ref: any;
-	memoizedProps: any;
-	updateQueue: any;
-	memoizedState: any;
-	contextDependencies: any;
-	effectTag: number;
-	nextEffect: any;
-	firstEffect: any;
-	lastEffect: any;
-	expirationTime: number;
-	childExpirationTime: number;
-	stateQueueTimer: any;
 	containerInfo: any;
 	identifierPrefix: any;
 	pendingChildren: any;
@@ -36,6 +19,14 @@ class FiberRootNode {
 	pendingContext: any;
 	callbackNode: any;
 	callbackPriority: Lane;
+	onRecoverableError: any;
+	pendingLanes: Lanes;
+	suspendedLanes: Lanes;
+	pingedLanes: Lanes;
+	expiredLanes: Lanes;
+	mutableReadLanes: Lanes;
+	finishedLanes: Lanes;
+	entangledLanes: Lanes;
 
 	constructor(
 		containerInfo,
@@ -57,33 +48,17 @@ class FiberRootNode {
 		this.callbackNode = null
 		this.callbackPriority = ReactFiberLane.NoLane
 
-		this.elementType = null
-		this.type = null
-		this.stateNode = null // 对应的函数组件或者dom节点
-		this.stateQueueTimer = null // 用于state的合并更新(setTimeout)
+		this.pendingLanes = ReactFiberLane.NoLanes
+		this.suspendedLanes = ReactFiberLane.NoLanes;
+		this.pingedLanes = ReactFiberLane.NoLanes;
+		this.expiredLanes = ReactFiberLane.NoLanes;
+		this.mutableReadLanes = ReactFiberLane.NoLanes;
+		this.finishedLanes = ReactFiberLane.NoLanes;
 
-		this.return = null
-		this.child = null
-		this.sibling = null
-		this.index = 0
-
-		this.ref = null
-
-		this.memoizedProps = null
-		this.updateQueue = null // Effect的更新链表
-		this.memoizedState = null
-		this.contextDependencies = null
-
-		this.effectTag = ReactSideEffectTags.NoEffect
-		this.nextEffect = null
-
-		this.firstEffect = null
-		this.lastEffect = null
-
-		this.expirationTime = NoWork
-		this.childExpirationTime = NoWork;
+		this.entangledLanes = ReactFiberLane.NoLanes;
 
 		this.identifierPrefix = identifierPrefix;
+		this.onRecoverableError = onRecoverableError;
 	}
 }
 

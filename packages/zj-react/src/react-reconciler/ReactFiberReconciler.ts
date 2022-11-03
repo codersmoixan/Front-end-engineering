@@ -1,10 +1,11 @@
 import { createFiberRoot } from "../react-dom/fiber/ReactFiberRoot";
-import { createHostRootFiber } from "../react-dom/fiber/ReactFiber";
 import { ReactWorkTags } from "../shared/ReactWorkTags";
-import { initializeUpdateQueue } from "./ReactFiberClassUpdateQueue";
+import {requestEventTime, requestUpdateLane} from "./ReactFiberWorkLoop";
 import type { DOMContainer } from "../react-dom/interface"
 import type { RootTag } from "../shared/ReactRootTags";
 import type { FiberRoot } from "./ReactInternalTypes";
+import { Lane } from "../shared/ReactFiberLane";
+import { createUpdate, enqueueUpdate } from "./ReactFiberClassUpdateQueue";
 
 type OpaqueRoot = FiberRoot;
 
@@ -17,7 +18,8 @@ export function createContainer(
 	identifierPrefix: string,
 	onRecoverableError: (error: unknown) => void,
 ): OpaqueRoot {
-	const root = createFiberRoot(
+	// todo 创建fiberRoot对象
+	return createFiberRoot(
 		containerInfo,
 		tag,
 		false,
@@ -28,18 +30,35 @@ export function createContainer(
 		identifierPrefix,
 		onRecoverableError
 		)
+}
 
-	const uninitializedFiber = createHostRootFiber(
-		tag,
-		isStrictMode,
-		concurrentUpdatesByDefaultOverride
-	)
-	root.current = uninitializedFiber
-	uninitializedFiber.stateNode = root
+export function updateContainer(
+	element: any,
+	container: OpaqueRoot,
+	parentComponent: any,
+	callback?: Function
+): Lane {
+	const current = container.current
+	// todo 1. 获取当前时间戳，计算本次更新的优先级
+	const eventTime = requestEventTime()
+	const lane = requestUpdateLane(current)
 
-	initializeUpdateQueue(uninitializedFiber)
+	// todo 2. 设置fiber updateQueue
+	const update = createUpdate(eventTime, lane)
+	update.payload = { element }
+	callback = callback === undefined ? null : callback
+	if (callback !== null) {
+		update.callback = (callback as () => unknown)
+	}
 
-	return root
+	const root = enqueueUpdate(current, update, lane)
+
+	if (root !== null) {
+		// todo 3. 进入reconciler运作流程中的`输入`环节
+		scheduleUpdateOnFiber(root, current, lane, eventTime)
+	}
+
+	return lane
 }
 
 export function getPublicRootInstance(container: any) {
